@@ -6,32 +6,34 @@ def receive(player1, player2, shoe1, shoe2):
     while True:
         rlist, wlist, xlist = select.select([my_socket], [], [])
         if my_socket in rlist:
-            message = my_socket.recv(MAX_MSG_LENGTH).decode()
-            if "player1" in message:
-                if message == "player1_right":
-                    player1.move_right()
-                    shoe1.move_right()
-                elif message == "player1_left":
-                    player1.move_left()
-                    shoe1.move_left()
-                elif message == "player1_jump":
-                    player1.jump()
-                    shoe1.jump()
-                elif message == "player1_kick":
-                    shoe1.kick()
+            messages = my_socket.recv(MAX_MSG_LENGTH).decode()[:-1].split(',')
+            print(messages)
+            for message in messages:
+                if "player1" in message:
+                    if message == "player1_right":
+                        player1.move_right()
+                        shoe1.move_right()
+                    elif message == "player1_left":
+                        player1.move_left()
+                        shoe1.move_left()
+                    elif message == "player1_jump":
+                        player1.jump()
+                        shoe1.jump()
+                    elif message == "player1_kick":
+                        shoe1.kick()
 
-            elif "player2" in message:
-                if message == "player2_right":
-                    player2.move_right()
-                    shoe2.move_right()
-                elif message == "player2_left":
-                    player2.move_left()
-                    shoe2.move_left()
-                elif message == "player2_jump":
-                    player2.jump()
-                    shoe2.jump()
-                elif message == "player2_kick":
-                    shoe2.kick()
+                if "player2" in message:
+                    if message == "player2_right":
+                        player2.move_right()
+                        shoe2.move_right()
+                    elif message == "player2_left":
+                        player2.move_left()
+                        shoe2.move_left()
+                    elif message == "player2_jump":
+                        player2.jump()
+                        shoe2.jump()
+                    elif message == "player2_kick":
+                        shoe2.kick()
 
 
 MAX_MSG_LENGTH = 1024
@@ -114,19 +116,19 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
             keys = pygame.key.get_pressed()
 
             if keys[pygame.K_d]:
-                msg = player_number + "_right"
+                msg = player_number + "_right,"
                 my_socket.send(msg.encode())
 
             if keys[pygame.K_a]:
-                msg = player_number + "_left"
+                msg = player_number + "_left,"
                 my_socket.send(msg.encode())
 
             if keys[pygame.K_w]:
-                msg = player_number + "_jump"
+                msg = player_number + "_jump,"
                 my_socket.send(msg.encode())
 
             if keys[pygame.K_SPACE]:
-                msg = player_number + "_kick"
+                msg = player_number + "_kick,"
                 my_socket.send(msg.encode())
 
             if event.type == pygame.QUIT:
@@ -142,6 +144,10 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
         player1.gravity()
         shoe1.gravity()
         shoe1.rotate_leg()
+
+        player2.gravity()
+        shoe2.gravity()
+        shoe2.rotate_leg()
 
         pygame.display.update()
         clock.tick(30)
