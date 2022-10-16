@@ -1,9 +1,8 @@
-import pygame, time, random, socket, select, threading
-from game_rectangles import player_cls, shoe_cls, ball_cls, goal_posts_cls
-from game_functions import get_offset, draw_window, create_environment, check_goal, goal, ball_collision, end_game
+import pygame, socket, select, threading
+from game_functions import get_offset, draw_window, create_environment, check_goal, ball_collision, end_game
 
 
-def recieve(player1, player2, shoe1, shoe2):
+def receive(player1, player2, shoe1, shoe2):
     while True:
         rlist, wlist, xlist = select.select([my_socket], [], [])
         if my_socket in rlist:
@@ -39,10 +38,10 @@ MAX_MSG_LENGTH = 1024
 def network_setup():
     # Network setup
     my_socket = socket.socket()
-    my_socket.connect(('127.0.0.1', 5555))
-
+    my_socket.connect(('192.168.1.109', 5555))
     # Which side is the player playing
     return my_socket, str(my_socket.recv(MAX_MSG_LENGTH).decode())
+
 
 my_socket, player_number = network_setup()
 
@@ -153,7 +152,7 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
 if __name__ == '__main__':
     player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post = create_environment()
 
-    recieve_thread = threading.Thread(target=recieve, args=(player1, player2, shoe1, shoe2))
-    recieve_thread.start()
+    receive_thread = threading.Thread(target=receive, args=(player1, player2, shoe1, shoe2))
+    receive_thread.start()
 
     main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
