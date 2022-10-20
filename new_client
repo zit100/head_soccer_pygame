@@ -1,0 +1,89 @@
+import pygame, socket, select, pickle, threading
+from game_functions import get_offset, draw_window, create_environment, check_goal, ball_collision, end_game
+
+
+def receive(player1, player2, shoe1, shoe2, ball):
+    while True:
+        rlist, wlist, xlist = select.select([my_socket], [], [])
+        if my_socket in rlist:
+            game_info = my_socket.recv(MAX_MSG_LENGTH).decode().split(',')
+            game_info = [float(i) for i in game_info]
+            if len(game_info) == 14:
+                ball.x, ball.y, ball.tilt,\
+                player1.x, player1.y,\
+                shoe1.x, shoe1.y, shoe1.tilt,\
+                player2.x, player2.y,\
+                shoe2.x, shoe2.y, shoe2.tilt, time_left = game_info
+
+
+MAX_MSG_LENGTH = 1024
+def network_setup():
+    # Network setup
+    my_socket = socket.socket()
+    my_socket.connect(('192.168.1.109', 5555))
+    # Which side is the player playing
+    return my_socket, str(my_socket.recv(MAX_MSG_LENGTH).decode())
+
+
+my_socket, player_number = network_setup()
+
+WIN_WIDTH = 1200
+WIN_HEIGHT = 600
+
+# General setup
+pygame.init()
+clock = pygame.time.Clock()
+
+# Setting up the main window
+screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+pygame.display.set_caption(player_number + " " + 'Window')
+
+
+def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
+    global h_score, a_score
+
+    window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+
+    run = True
+    while run:
+        draw_window(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, time_left=0)
+
+        for event in pygame.event.get():
+            keys = pygame.key.get_pressed()
+
+            if keys[pygame.K_d]:
+                msg = player_number + "_right,"
+                my_socket.send(msg.encode())
+
+            if keys[pygame.K_a]:
+                msg = player_number + "_left,"
+                my_socket.send(msg.encode())
+
+            if keys[pygame.K_w]:
+                msg = player_number + "_jump,"
+                my_socket.send(msg.encode())
+
+            if keys[pygame.K_SPACE]:
+                msg = player_number + "_kick,"
+                my_socket.send(msg.encode())
+
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                my_socket.send("exit".encode())
+                my_socket.close()
+                quit()
+
+        pygame.display.update()
+        clock.tick(60)
+
+    exit = input()
+
+
+if __name__ == '__main__':
+    player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post = create_environment()
+
+    receive_thread = threading.Thread(target=receive, args=(player1, player2, shoe1, shoe2, ball))
+    receive_thread.start()
+
+    main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
