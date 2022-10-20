@@ -7,7 +7,6 @@ def receive(player1, player2, shoe1, shoe2):
         rlist, wlist, xlist = select.select([my_socket], [], [])
         if my_socket in rlist:
             messages = my_socket.recv(MAX_MSG_LENGTH).decode()[:-1].split(',')
-            print(messages)
             for message in messages:
                 if "player1" in message:
                     if message == "player1_right":
@@ -143,14 +142,14 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
 
         player1.gravity()
         shoe1.gravity()
-        shoe1.rotate_leg()
+        shoe1.rotate_leg(True)
 
         player2.gravity()
         shoe2.gravity()
-        shoe2.rotate_leg()
+        shoe2.rotate_leg(False)
 
         pygame.display.update()
-        clock.tick(30)
+        clock.tick(60)
 
     exit = input()
 
