@@ -1,0 +1,205 @@
+import pygame, socket, select, pickle, threading
+from game_functions import get_offset, draw_window, create_environment, check_goal, ball_collision, end_game
+
+MAX_MSG_LENGTH = 1024
+SERVER_PORT = 5555
+SERVER_IP = "0.0.0.0"
+
+client_sockets = []
+
+
+def print_client_sockets(client_sockets):
+    print("clients connected:")
+    for c in client_sockets:
+        print("\t", c.getpeername())
+
+
+def client_sockets_can_read(client_sockets, wlist):
+    for c in client_sockets:
+        if c not in wlist:
+            return False
+    return True
+
+print("Setting up server...")
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Optimize socket
+server_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+server_socket.bind((SERVER_IP, SERVER_PORT))
+server_socket.listen()
+print("Listening for clients...")
+
+count = 0
+side_count = 0
+
+while len(client_sockets) != 2:
+    rlist, wlist, xlist = select.select([server_socket] + client_sockets, client_sockets, [])
+    if len(wlist) == 2:
+        if count == 0:
+            if client_sockets_can_read(client_sockets, wlist):
+                for c in client_sockets:
+                    if side_count == 0:
+                        c.send("player1".encode())
+                        side_count += 1
+                    else:
+                        c.send("player2".encode())
+                count += 1
+    for current_socket in rlist:
+        if current_socket is server_socket:
+            connection, client_address = current_socket.accept()
+            print("New client joined!", client_address)
+            client_sockets.append(connection)
+            print_client_sockets(client_sockets)
+
+
+WIN_WIDTH = 1200
+WIN_HEIGHT = 600
+
+# General setup
+pygame.init()
+clock = pygame.time.Clock()
+
+# Setting up the main window
+screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+pygame.display.set_caption("Main Window")
+
+
+def network_server(player1, player2, shoe1, shoe2):
+    while True:
+        rlist, wlist, xlist = select.select([server_socket], [], [])
+        if my_socket in rlist:
+            # Asks for permission for the action
+            messages = my_socket.recv(MAX_MSG_LENGTH).decode()[:-1].split(',')
+            if "exit" in messages:
+                print("Connection closed from:", current_socket.getpeername())
+                client_sockets.remove(current_socket)
+                current_socket.close()
+                print_client_sockets(client_sockets)
+            else:
+                for message in messages:
+                    if "player1" in message:
+                        if message == "player1_right":
+                            player1.move_right()
+                            shoe1.move_right()
+                        elif message == "player1_left":
+                            player1.move_left()
+                            shoe1.move_left()
+                        elif message == "player1_jump":
+                            player1.jump()
+                            shoe1.jump()
+                        elif message == "player1_kick":
+                            shoe1.kick()
+
+                    if "player2" in message:
+                        if message == "player2_right":
+                            player2.move_right()
+                            shoe2.move_right()
+                        elif message == "player2_left":
+                            player2.move_left()
+                            shoe2.move_left()
+                        elif message == "player2_jump":
+                            player2.jump()
+                            shoe2.jump()
+                        elif message == "player2_kick":
+                            shoe2.kick()
+
+        # If all clients disconnected
+        if len(client_sockets) == 0:
+            break
+
+    server_socket.close()
+
+
+def game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
+    global h_score, a_score
+
+    window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+    clock = pygame.time.Clock()
+
+    time_left = 0
+
+    collide = False
+
+    former_keys = []
+    run = True
+    while run:
+        time_left = pygame.time.get_ticks() // 1000
+        if time_left >= 150:
+            end_game(window)
+            break
+
+        check_goal(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
+
+        draw_window(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, time_left)
+
+        player1_mask, player1_rect = player1.get_mask()
+        player2_mask, player2_rect = player2.get_mask()
+        shoe1_mask, shoe1_rect = shoe1.get_mask()
+        shoe2_mask, shoe2_rect = shoe2.get_mask()
+        ball_mask = ball.get_mask()
+
+        player1_offset = get_offset(ball, player1_rect)
+        shoe1_offset = get_offset(ball, shoe1_rect)
+        player2_offset = get_offset(ball, player2_rect)
+        shoe2_offset = get_offset(ball, shoe2_rect)
+
+        if player1_mask.overlap(ball_mask, player1_offset) and not collide:
+            collide = True
+            ball_collision(ball_mask, player1_mask, player1_offset, ball, player1)
+            collide = False
+
+        if player2_mask.overlap(ball_mask, player2_offset) and not collide:
+            collide = True
+            ball_collision(ball_mask, player2_mask, player2_offset, ball, player2)
+            collide = False
+
+        if shoe1_mask.overlap(ball_mask, shoe1_offset) and not collide:
+            collide = True
+            ball_collision(ball_mask, shoe1_mask, shoe1_offset, ball, shoe1, True)
+            collide = False
+
+        if shoe2_mask.overlap(ball_mask, shoe2_offset) and not collide:
+            collide = True
+            ball_collision(ball_mask, shoe2_mask, shoe2_offset, ball, shoe2, True)
+            collide = False
+
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                my_socket.send("exit".encode())
+                my_socket.close()
+                quit()
+
+        ball.move()
+        ball.out_of_bounds()
+
+        player1.gravity()
+        shoe1.gravity()
+        shoe1.rotate_leg(True)
+
+        player2.gravity()
+        shoe2.gravity()
+        shoe2.rotate_leg(False)
+
+        game_info = str(ball.x) + ',' + str(ball.y) + ',' + str(ball.tilt) + ',' + \
+                    str(player1.x) + ',' + str(player1.y) + ',' + \
+                    str(shoe1.x) + ',' + str(shoe1.y) + ',' + str(shoe1.tilt) + ',' + \
+                    str(player2.x) + ',' + str(player2.y) + ',' + \
+                    str(shoe2.x) + ',' + str(shoe2.y) + ',' + str(shoe2.tilt) + ',' + \
+                    str(time_left)
+        game_info = game_info.encode()
+        client_sockets[0].send(game_info)
+        client_sockets[1].send(game_info)
+
+        pygame.display.update()
+        clock.tick(30)
+
+    exit = input()
+
+
+if __name__ == '__main__':
+    player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post = create_environment()
+
+    server_thread = threading.Thread(target=network_server, args=(player1, player2, shoe1, shoe2))
+    server_thread.start()
+
+    game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
