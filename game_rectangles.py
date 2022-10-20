@@ -122,16 +122,22 @@ class shoe_cls(player_cls):
             self.kick_key_pressed = True
             self.shot_power = 5
 
-    def rotate_leg(self):
+    def rotate_leg(self, player1):
         if self.kick_max:
             self.shot_power = 1
-            self.tilt -= self.ROT_VEL
+            if player1:
+                self.tilt -= self.ROT_VEL
+            else:
+                self.tilt += self.ROT_VEL
             if self.tilt == 0:
                 self.kick_max = False
         else:
             if self.kick_key_pressed:
-                self.tilt += self.ROT_VEL
-                if self.tilt == self.MAX_ROT:
+                if player1:
+                    self.tilt += self.ROT_VEL
+                else:
+                    self.tilt -= self.ROT_VEL
+                if self.tilt == self.MAX_ROT or self.tilt == -self.MAX_ROT:
                     self.kick_max = True
                     self.kick_key_pressed = False
 
