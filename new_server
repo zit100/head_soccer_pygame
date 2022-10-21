@@ -205,4 +205,3 @@ if __name__ == '__main__':
     server_thread.start()
 
     main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
-
