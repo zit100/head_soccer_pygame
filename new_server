@@ -1,5 +1,5 @@
 import pygame, socket, select, pickle, threading
-from game_functions import get_offset, draw_window, create_environment, check_goal, ball_collision, end_game
+from game_functions import get_offset, draw_window, create_environment, check_goal_for_new_server, check_goal, ball_collision, end_game
 
 MAX_MSG_LENGTH = 1024
 SERVER_PORT = 5555
@@ -31,8 +31,14 @@ print("Listening for clients...")
 count = 0
 side_count = 0
 
-while len(client_sockets) != 2:
+while True:
     rlist, wlist, xlist = select.select([server_socket] + client_sockets, client_sockets, [])
+    for current_socket in rlist:
+        if current_socket is server_socket:
+            connection, client_address = current_socket.accept()
+            print("New client joined!", client_address)
+            client_sockets.append(connection)
+            print_client_sockets(client_sockets)
     if len(wlist) == 2:
         if count == 0:
             if client_sockets_can_read(client_sockets, wlist):
@@ -42,33 +48,16 @@ while len(client_sockets) != 2:
                         side_count += 1
                     else:
                         c.send("player2".encode())
-                count += 1
-    for current_socket in rlist:
-        if current_socket is server_socket:
-            connection, client_address = current_socket.accept()
-            print("New client joined!", client_address)
-            client_sockets.append(connection)
-            print_client_sockets(client_sockets)
-
-
-WIN_WIDTH = 1200
-WIN_HEIGHT = 600
-
-# General setup
-pygame.init()
-clock = pygame.time.Clock()
-
-# Setting up the main window
-screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
-pygame.display.set_caption("Main Window")
+                break
 
 
 def network_server(player1, player2, shoe1, shoe2):
     while True:
-        rlist, wlist, xlist = select.select([server_socket], [], [])
-        if my_socket in rlist:
+        rlist, wlist, xlist = select.select([server_socket] + client_sockets, client_sockets, [])
+        for current_socket in rlist:
             # Asks for permission for the action
-            messages = my_socket.recv(MAX_MSG_LENGTH).decode()[:-1].split(',')
+            messages = current_socket.recv(MAX_MSG_LENGTH).decode()[:-1].split(',')
+            print(messages)
             if "exit" in messages:
                 print("Connection closed from:", current_socket.getpeername())
                 client_sockets.remove(current_socket)
@@ -109,7 +98,19 @@ def network_server(player1, player2, shoe1, shoe2):
     server_socket.close()
 
 
-def game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
+WIN_WIDTH = 1200
+WIN_HEIGHT = 600
+
+# General setup
+pygame.init()
+clock = pygame.time.Clock()
+
+# Setting up the main window
+screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+pygame.display.set_caption("Main Window")
+
+
+def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
     global h_score, a_score
 
     window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -119,7 +120,6 @@ def game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
 
     collide = False
 
-    former_keys = []
     run = True
     while run:
         time_left = pygame.time.get_ticks() // 1000
@@ -127,6 +127,7 @@ def game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
             end_game(window)
             break
 
+        #check_goal_for_new_server(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets)
         check_goal(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
 
         draw_window(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, time_left)
@@ -162,12 +163,13 @@ def game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
             ball_collision(ball_mask, shoe2_mask, shoe2_offset, ball, shoe2, True)
             collide = False
 
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.quit()
-                my_socket.send("exit".encode())
-                my_socket.close()
-                quit()
+        # Cant use it because not getting events
+        # if pygame.event.type == pygame.QUIT:
+        #     run = False
+        #     pygame.quit()
+        #     my_socket.send("exit".encode())
+        #     my_socket.close()
+        #     quit()
 
         ball.move()
         ball.out_of_bounds()
@@ -202,4 +204,5 @@ if __name__ == '__main__':
     server_thread = threading.Thread(target=network_server, args=(player1, player2, shoe1, shoe2))
     server_thread.start()
 
-    game_server(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
+    main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
+
