@@ -1,12 +1,12 @@
 import pygame, socket, select, pickle, threading
-from game_functions import get_offset, draw_window, create_environment, check_goal, ball_collision, end_game
+from game_functions import draw_window, create_environment, end_game
 
 
 def receive(player1, player2, shoe1, shoe2, ball):
     while True:
         rlist, wlist, xlist = select.select([my_socket], [], [])
         if my_socket in rlist:
-            game_info = my_socket.recv(MAX_MSG_LENGTH).decode().split(',')
+            game_info = my_socket.recv(MAX_MSG_LENGTH).decode().split(',')[:14]
             game_info = [float(i) for i in game_info]
             if len(game_info) == 14:
                 ball.x, ball.y, ball.tilt,\
@@ -14,7 +14,6 @@ def receive(player1, player2, shoe1, shoe2, ball):
                 shoe1.x, shoe1.y, shoe1.tilt,\
                 player2.x, player2.y,\
                 shoe2.x, shoe2.y, shoe2.tilt, time_left = game_info
-
 
 MAX_MSG_LENGTH = 1024
 def network_setup():
