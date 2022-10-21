@@ -101,6 +101,29 @@ def check_goal(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal
                 pygame.time.wait(1000)
 
                 goal('home', player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
+def check_goal_for_new_server(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets):
+    global h_score, a_score
+
+    l_goal_post_mask, l_goal_post_rect = l_goal_post.get_mask()
+    r_goal_post_mask, r_goal_post_rect = r_goal_post.get_mask()
+    ball_mask = ball.get_mask()
+
+    l_goal_post_offset = get_offset(ball, l_goal_post_rect)
+    r_goal_post_offset = get_offset(ball, r_goal_post_rect)
+
+    if l_goal_post_mask.overlap(ball_mask, l_goal_post_offset) \
+            or r_goal_post_mask.overlap(ball_mask, r_goal_post_offset):
+        if not ball.y <= WIN_HEIGHT - GOALPOSTS_IMG.get_height() + 50:
+            if ball.x + BALL_IMG.get_width() < GOALPOST_WIDTH:
+                a_score += 1
+                pygame.time.wait(1000)
+
+                goal_for_new_server('away', player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets)
+            elif ball.x > WIN_WIDTH - GOALPOST_WIDTH:
+                h_score += 1
+                pygame.time.wait(1000)
+
+                goal_for_new_server('home', player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets)
 
 def goal(side, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
     player1.__init__(WIN_WIDTH / 2 - 200 - SHOE_IMG.get_width(),
@@ -113,6 +136,25 @@ def goal(side, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
                    WIN_HEIGHT - SHOE_IMG.get_height())
     ball.__init__(WIN_WIDTH / 2 - BALL_IMG.get_width() / 2,
                   WIN_HEIGHT / 2 - BALL_IMG.get_height())
+def goal_for_new_server(side, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets):
+    player1.__init__(WIN_WIDTH / 2 - 200 - SHOE_IMG.get_width(),
+                     WIN_HEIGHT - SHOE_IMG.get_height() / 2 - PLAYER1_IMG.get_height())
+    player2.__init__(WIN_WIDTH / 2 + 200,
+                     WIN_HEIGHT - SHOE_IMG.get_height() / 2 - PLAYER2_IMG.get_height())
+    shoe1.__init__(WIN_WIDTH / 2 - 200 + PLAYER1_IMG.get_width() / 3 - SHOE_IMG.get_width(),
+                   WIN_HEIGHT - SHOE_IMG.get_height())
+    shoe2.__init__(WIN_WIDTH / 2 + 200 - PLAYER2_IMG.get_width() / 3,
+                   WIN_HEIGHT - SHOE_IMG.get_height())
+    ball.__init__(WIN_WIDTH / 2 - BALL_IMG.get_width() / 2,
+                  WIN_HEIGHT / 2 - BALL_IMG.get_height())
+
+    if side == "home":
+        goal = "home_scored".encode()
+    else:
+        goal = "away_scored".encode()
+    client_sockets[0].send(goal)
+    client_sockets[1].send(goal)
+
 
 def ball_collision(ball_mask, object_mask, object_offset, ball, object, is_shoe=False):
     # Find ball center point
