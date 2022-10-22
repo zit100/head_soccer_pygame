@@ -57,7 +57,6 @@ def network_server(player1, player2, shoe1, shoe2):
         for current_socket in rlist:
             # Asks for permission for the action
             messages = current_socket.recv(MAX_MSG_LENGTH).decode()[:-1].split(',')
-            print(messages)
             if "exit" in messages:
                 print("Connection closed from:", current_socket.getpeername())
                 client_sockets.remove(current_socket)
@@ -127,8 +126,8 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
             end_game(window)
             break
 
-        #check_goal_for_new_server(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets)
-        check_goal(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
+        check_goal_for_new_server(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets)
+        #check_goal(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post)
 
         draw_window(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, time_left)
 
@@ -186,8 +185,7 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
                     str(player1.x) + ',' + str(player1.y) + ',' + \
                     str(shoe1.x) + ',' + str(shoe1.y) + ',' + str(shoe1.tilt) + ',' + \
                     str(player2.x) + ',' + str(player2.y) + ',' + \
-                    str(shoe2.x) + ',' + str(shoe2.y) + ',' + str(shoe2.tilt) + ',' + \
-                    str(time_left)
+                    str(shoe2.x) + ',' + str(shoe2.y) + ',' + str(shoe2.tilt)
         game_info = game_info.encode()
         client_sockets[0].send(game_info)
         client_sockets[1].send(game_info)
