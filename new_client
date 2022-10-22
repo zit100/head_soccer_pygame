@@ -1,19 +1,37 @@
 import pygame, socket, select, pickle, threading
-from game_functions import draw_window, create_environment, end_game
+from game_functions import draw_window, create_environment, end_game, new_client_goal_scored
+
+pygame.font.init()
+
+GOAL_DECLARATION_FONT = pygame.font.SysFont("david", 200)
+GOAL_DECLARATION = GOAL_DECLARATION_FONT.render("GOAAAAL!!!", 1, (0, 0, 255))
+
+global was_goal
+was_goal = False
 
 
 def receive(player1, player2, shoe1, shoe2, ball):
+    global h_score, a_score, was_goal
+
     while True:
         rlist, wlist, xlist = select.select([my_socket], [], [])
         if my_socket in rlist:
-            game_info = my_socket.recv(MAX_MSG_LENGTH).decode().split(',')[:14]
-            game_info = [float(i) for i in game_info]
-            if len(game_info) == 14:
-                ball.x, ball.y, ball.tilt,\
-                player1.x, player1.y,\
-                shoe1.x, shoe1.y, shoe1.tilt,\
-                player2.x, player2.y,\
-                shoe2.x, shoe2.y, shoe2.tilt, time_left = game_info
+            game_info = my_socket.recv(MAX_MSG_LENGTH).decode().split(',')
+            if "home_scored" in game_info or "away_scored" in game_info:
+                if "home_scored" in game_info:
+                    new_client_goal_scored("home_scored")
+                    was_goal = True
+                else:
+                    new_client_goal_scored("away_scored")
+                    was_goal = True
+            else:
+                game_info = [float(i) for i in game_info[:13]]
+                if len(game_info) == 13:
+                    ball.x, ball.y, ball.tilt,\
+                    player1.x, player1.y,\
+                    shoe1.x, shoe1.y, shoe1.tilt,\
+                    player2.x, player2.y,\
+                    shoe2.x, shoe2.y, shoe2.tilt = game_info
 
 MAX_MSG_LENGTH = 1024
 def network_setup():
@@ -37,15 +55,24 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption(player_number + " " + 'Window')
 
-
 def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
-    global h_score, a_score
+    global h_score, a_score, was_goal
 
     window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 
+    goals_delay = 0
+
     run = True
     while run:
-        draw_window(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, time_left=0)
+        time_left = pygame.time.get_ticks() // 1000 - goals_delay
+        if was_goal:
+            window.blit(GOAL_DECLARATION, (WIN_WIDTH / 2 - GOAL_DECLARATION.get_width() / 2, WIN_HEIGHT / 4))
+            pygame.display.update()
+            was_goal = False
+            pygame.time.wait(1000)
+            goals_delay += 1
+
+        draw_window(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, time_left)
 
         for event in pygame.event.get():
             keys = pygame.key.get_pressed()
