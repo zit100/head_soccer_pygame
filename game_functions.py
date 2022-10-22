@@ -149,11 +149,19 @@ def goal_for_new_server(side, player1, player2, shoe1, shoe2, ball, l_goal_post,
                   WIN_HEIGHT / 2 - BALL_IMG.get_height())
 
     if side == "home":
-        goal = "home_scored".encode()
+        goal = "home_scored,".encode()
     else:
-        goal = "away_scored".encode()
+        goal = "away_scored,".encode()
     client_sockets[0].send(goal)
     client_sockets[1].send(goal)
+
+def new_client_goal_scored(side):
+    global h_score, a_score
+
+    if side == "home_scored":
+        h_score += 1
+    else:
+        a_score += 1
 
 
 def ball_collision(ball_mask, object_mask, object_offset, ball, object, is_shoe=False):
