@@ -124,6 +124,12 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
         time_left = pygame.time.get_ticks() // 1000
         if time_left >= 150:
             end_game(window)
+
+            run = False
+            pygame.quit()
+            my_socket.send("exit".encode())
+            my_socket.close()
+            quit()
             break
 
         check_goal_for_new_server(window, player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post, client_sockets)
@@ -161,14 +167,6 @@ def main(player1, player2, shoe1, shoe2, ball, l_goal_post, r_goal_post):
             collide = True
             ball_collision(ball_mask, shoe2_mask, shoe2_offset, ball, shoe2, True)
             collide = False
-
-        # Cant use it because not getting events
-        # if pygame.event.type == pygame.QUIT:
-        #     run = False
-        #     pygame.quit()
-        #     my_socket.send("exit".encode())
-        #     my_socket.close()
-        #     quit()
 
         ball.move()
         ball.out_of_bounds()
