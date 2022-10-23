@@ -17,7 +17,7 @@ BG_IMG = pygame.transform.scale(BG_IMG, (WIN_WIDTH, WIN_HEIGHT))
 # Game rectangles
 class player_cls:
     IMG = PLAYER1_IMG
-    SPEED = 8
+    SPEED = 10
     VERTICAL = 10
     MAX_VERTICAL = 45
     GFORCE = 1
@@ -188,8 +188,8 @@ class ball_cls:
             d = self.y_speed * self.tick_count - self.gforce * self.tick_count ** 2
 
             if self.y - d <= WIN_HEIGHT - GOALPOSTS_IMG.get_height() and (
-                    self.x + BALL_IMG.get_width() < GOALPOST_WIDTH + 10
-                    or self.x + BALL_IMG.get_width() > WIN_WIDTH - GOALPOST_WIDTH + 10):
+                    self.x + BALL_IMG.get_width() < GOALPOST_WIDTH + 20
+                    or self.x > WIN_WIDTH - GOALPOST_WIDTH - 20):
                 self.tick_count = 0
                 self.y = self.post_ground - 2
                 self.y_speed *= -1
