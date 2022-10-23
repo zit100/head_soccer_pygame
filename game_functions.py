@@ -165,29 +165,33 @@ def new_client_goal_scored(side):
 
 
 def ball_collision(ball_mask, object_mask, object_offset, ball, object, is_shoe=False):
-    # Find ball center point
-    ball_center = (round(ball.x + BALL_IMG.get_width() / 2), round(ball.y + BALL_IMG.get_height() / 2))
+    if object.x_speed == 0:
+        ball.x_speed *= -1
+        ball.tilt *= -1
+    else:
+        # Find ball center point
+        ball_center = (round(ball.x + BALL_IMG.get_width() / 2), round(ball.y + BALL_IMG.get_height() / 2))
 
-    # Find the collosion point
-    touch_point = object_mask.overlap(ball_mask, object_offset)
-    touch_point = (round(object.x + touch_point[0]), round(object.y + touch_point[1]))
+        # Find the collosion point
+        touch_point = object_mask.overlap(ball_mask, object_offset)
+        touch_point = (round(object.x + touch_point[0]), round(object.y + touch_point[1]))
 
-    # Compute the angle the collosion make
-    ball_triangle_x = touch_point[0] - ball_center[0]
-    ball_triangle_y = touch_point[1] - ball_center[1]
+        # Compute the angle the collosion make
+        ball_triangle_x = touch_point[0] - ball_center[0]
+        ball_triangle_y = touch_point[1] - ball_center[1]
 
-    # Can divide by zero??
-    if ball_triangle_x != 0:
-        ball_triangle_angle = math.atan(ball_triangle_y / ball_triangle_x)
+        # Can divide by zero??
+        if ball_triangle_x != 0:
+            ball_triangle_angle = math.atan(ball_triangle_y / ball_triangle_x)
 
-        # v0 + v1 = u0 + u1, u1 = 0
-        if is_shoe:
-            ball.x_speed = ball.x_speed + object.x_speed*object.shot_power * math.cos(ball_triangle_angle)
-            ball.y_speed = ball.y_speed - object.y_speed*object.shot_power - object.x_speed*object.shot_power * math.sin(ball_triangle_angle)
-        else:
-            ball.x_speed = ball.x_speed + object.x_speed * math.cos(ball_triangle_angle)
-            ball.y_speed = ball.y_speed - object.y_speed - object.x_speed * math.sin(ball_triangle_angle)
-        ball.tilt += 20
+            # v0 + v1 = u0 + u1, u1 = 0
+            if is_shoe:
+                ball.x_speed = ball.x_speed + object.x_speed*object.shot_power * math.cos(ball_triangle_angle)
+                ball.y_speed = ball.y_speed - object.y_speed*object.shot_power - object.x_speed*object.shot_power * math.sin(ball_triangle_angle)
+            else:
+                ball.x_speed = ball.x_speed + object.x_speed * math.cos(ball_triangle_angle)
+                ball.y_speed = ball.y_speed - object.y_speed - object.x_speed * math.sin(ball_triangle_angle)
+            ball.tilt += 20
 
 def end_game(window):
     global h_score, a_score
