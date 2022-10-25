@@ -186,11 +186,12 @@ def ball_collision(ball_mask, object_mask, object_offset, ball, object, is_shoe=
 
             # v0 + v1 = u0 + u1, u1 = 0
             if is_shoe:
-                ball.x_speed = ball.x_speed + object.x_speed*object.shot_power * math.cos(ball_triangle_angle)
-                ball.y_speed = ball.y_speed - object.y_speed*object.shot_power - object.x_speed*object.shot_power * math.sin(ball_triangle_angle)
+                ball.x_speed = (ball.x_speed + object.x_speed*object.shot_power * math.cos(ball_triangle_angle))/2
+                ball.y_speed = (ball.y_speed - object.y_speed*object.shot_power\
+                               - object.x_speed*object.shot_power * math.sin(ball_triangle_angle))/2
             else:
-                ball.x_speed = ball.x_speed + object.x_speed * math.cos(ball_triangle_angle)
-                ball.y_speed = ball.y_speed - object.y_speed - object.x_speed * math.sin(ball_triangle_angle)
+                ball.x_speed = (ball.x_speed + object.x_speed * math.cos(ball_triangle_angle))/2
+                ball.y_speed = (ball.y_speed - object.y_speed - object.x_speed * math.sin(ball_triangle_angle))/2
             ball.tilt += 20
 
 def end_game(window):
