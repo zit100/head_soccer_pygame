@@ -188,8 +188,8 @@ class ball_cls:
             d = self.y_speed * self.tick_count - self.gforce * self.tick_count ** 2
 
             if self.y - d <= WIN_HEIGHT - GOALPOSTS_IMG.get_height() and (
-                    self.x + BALL_IMG.get_width() < GOALPOST_WIDTH + 20
-                    or self.x > WIN_WIDTH - GOALPOST_WIDTH - 20):
+                    self.x + BALL_IMG.get_width() + self.x_speed < GOALPOST_WIDTH + 20
+                    or self.x + self.x_speed> WIN_WIDTH - GOALPOST_WIDTH - 20):
                 self.tick_count = 0
                 self.y = self.post_ground - 2
                 self.y_speed *= -1
