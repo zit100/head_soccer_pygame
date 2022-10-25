@@ -37,7 +37,7 @@ MAX_MSG_LENGTH = 1024
 def network_setup():
     # Network setup
     my_socket = socket.socket()
-    my_socket.connect(('192.168.1.109', 5555))
+    my_socket.connect(('#ip address of the host', 5555))
     # Which side is the player playing
     return my_socket, str(my_socket.recv(MAX_MSG_LENGTH).decode())
 
